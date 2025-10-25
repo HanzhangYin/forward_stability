@@ -1,6 +1,8 @@
 # Forward Stability Distribution
 
 The original code is in `andy-s-original-code.sage`. The python version is`andy-s-original-code.py`.
+
+The forward stability statistics are in `forward_stability_distribution.py`.
 ## Installation 
 The code requires the following packages:
 ```bash
@@ -10,13 +12,6 @@ sage -pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org 
 **Note:** The `--trusted-host` flags may be needed on some systems to bypass SSL certificate issues.
 
 ## Random Pair Selection Algorithm
-
-### Overview
-
-This repository contains optimized code for computing Forward Stability Numbers for pairs of permutations in symmetric groups $S_n \times S_n$.
-
-
-Computing all pairs is computationally impossible, so we use random sampling.
 
 ### Two-Stage Sampling Strategy
 
