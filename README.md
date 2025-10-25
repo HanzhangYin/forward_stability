@@ -128,7 +128,7 @@ Parallel processing finished in XXX seconds.
 
 ### Code Location
 
-The random sampling implementation is in `test_8.py`, lines 191-205.
+The random sampling implementation is in `forward_stability_distribution.py`, lines 191-205.
 
 ## Dependencies
 
