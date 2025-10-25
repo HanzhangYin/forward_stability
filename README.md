@@ -1,5 +1,6 @@
 # Forward Stability Distribution
 
+The original code is in `andy-s-original-code.sage`. The python version is`andy-s-original-code.py`.
 ## Installation 
 The code requires sage package multipolynomial_bases. 
 ```bash
