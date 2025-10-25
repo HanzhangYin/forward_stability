@@ -43,44 +43,16 @@ task_list = [(perm_pool[indices_u[i]], perm_pool[indices_v[i]])
              for i in range(num_samples)]
 ```
 
-**Key Points:**
 - Uses NumPy's `np.random.randint()` for batch index generation (~50-100× faster than loops)
-- Generates num_samples pairs of indices in milliseconds
 - Each index pair (i, j) is uniformly random from [0, pool_size)
 - Pairs are sampled **with replacement** (same permutation can appear multiple times)
 
-### Statistical Properties
 
-**Sampling Space:**
-- With pool_size = K, we sample uniformly from K² possible pairs
-- Example: K = 7,000 → sampling from 49,000,000 possible pairs
-- This is a large enough space to capture the statistical distribution
-
-**Uniformity:**
-- Each of the K² possible pairs has equal probability of selection: 1/K²
-- The K permutations themselves are uniformly sampled from S_n
-- Result: Approximately uniform sampling over a large representative subset
-
-**Repetitions:**
-- Pairs can repeat (sampling with replacement)
-- Same permutation can be paired with itself (u = v is valid)
-- Self-pairs where index i = j are allowed
-
-### Performance Optimizations
-
-1. **Pool Pre-generation:**
-   - Generates K permutations once: O(K × n)
-   - Avoids repeated Permutations(n) object creation
-
-2. **NumPy Vectorization:**
-   - Batch generates all indices: ~50-100× faster than Python loops
-   - Pre-allocates arrays for memory efficiency
-
-3. **List Storage:**
+### List Storage:
    - Keeps permutations as Sage objects (not NumPy arrays)
    - Preserves access to Sage methods like `.to_lehmer_code()`
 
-4. **Multiprocessing:**
+### Multiprocessing:
    - Distributes pair processing across all CPU cores
    - Uses `Pool.map()` with optimal chunking
 
@@ -94,38 +66,25 @@ POOL_SIZE = 7000           # Size of pre-generated permutation pool
 
 **Tuning Guide:**
 - **POOL_SIZE:** Larger = more diversity, slower setup. Recommended: 5,000-10,000
-- **NUM_RANDOM_SAMPLES:** More samples = better statistical accuracy
-- Optimal: `POOL_SIZE ≈ sqrt(NUM_RANDOM_SAMPLES)` to balance diversity vs. speed
 
-### Algorithm Complexity
+## Generating the Chart
 
-**Time Complexity:**
-- Pool generation: O(K × n) where K = pool_size
-- Index generation: O(num_samples) - vectorized, very fast
-- Pair processing: O(num_samples × n²) - dominant cost, parallelized
+To generate the forward stability distribution chart, run:
 
-**Space Complexity:**
-- O(K × n) for storing the permutation pool
-- O(num_samples) for storing indices and results
-
-
-### Example Output
-
-For n=110 with 100,000 samples:
-```
-Pre-generating pool of 7000 permutations...
-Pool generation complete.
-Generating 100000 random index pairs...
-Building task list from random pairs...
-Task list of 100000 pairs built.
-
-Starting parallel processing with 12 cores...
-Parallel processing finished in XXX seconds.
+```bash
+sage forward_stability_distribution.py
 ```
 
-### Code Location
+**What it does:**
+1. Samples `NUM_RANDOM_SAMPLES` random pairs (u, v) from S_n × S_n
+2. Computes FS(u,v) = max(integer_support(u,v)) + 1 for each pair
+4. Creates a bar chart saved as `sN_stability_sampled_SAMPLES.png`
 
-The random sampling implementation is in `forward_stability_distribution.py`, lines 191-205.
+**Output includes:**
+- Expected value E[FS(u,v)]
+- Standard deviation (σ) and variance (σ²)
+
+**Progress tracking:** The script displays a real-time progress bar showing completion percentage, processing speed, and estimated time remaining.
 
 ## Dependencies
 
