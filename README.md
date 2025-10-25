@@ -2,10 +2,12 @@
 
 The original code is in `andy-s-original-code.sage`. The python version is`andy-s-original-code.py`.
 ## Installation 
-The code requires sage package multipolynomial_bases. 
+The code requires the following packages:
 ```bash
-sage -pip install multipolynomial_bases
+sage -pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org multipolynomial_bases tqdm
 ```
+
+**Note:** The `--trusted-host` flags may be needed on some systems to bypass SSL certificate issues.
 
 ## Random Pair Selection Algorithm
 
@@ -136,3 +138,5 @@ The random sampling implementation is in `forward_stability_distribution.py`, li
 - NumPy (for fast numerical operations)
 - Python multiprocessing (for parallel execution)
 - matplotlib (for visualization)
+- tqdm (for progress bar display)
+- multipolynomial_bases (for Schubert basis computations)

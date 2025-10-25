@@ -5,6 +5,7 @@ import random
 import numpy as np
 import time  # For timing the parallel processing
 from multiprocessing import Pool, cpu_count  # <-- The new imports
+from tqdm import tqdm  # For progress bar
 
 # --- Define constants ---
 _sage_const_1 = Integer(1)
@@ -12,7 +13,7 @@ _sage_const_0 = Integer(0)
 
 # --- Configuration ---
 # Change this value to compute for different S_n
-N = 90
+N = 30
 
 # Random sampling configuration
 # Set to None to compute ALL pairs, or set to a number to randomly sample that many pairs
@@ -208,13 +209,19 @@ def generate_stability_chart(n, num_samples=None):
     start_time = time.time()
     
     # Create the pool and distribute the work
-    # pool.map automatically chunks the task_list and sends it to workers
+    # Using imap with tqdm for progress tracking
     with Pool(processes=num_cores) as pool:
         # 'results' will be a list of integers: [4, 5, 4, 6, 7, 5, ...]
-        results = pool.map(process_pair, task_list, chunksize=max(1, len(task_list) // (num_cores * 4)))
+        chunksize = max(1, len(task_list) // (num_cores * 4))
+        results = list(tqdm(
+            pool.imap(process_pair, task_list, chunksize=chunksize),
+            total=len(task_list),
+            desc="Processing pairs",
+            unit="pair"
+        ))
 
     end_time = time.time()
-    print(f"Parallel processing finished in {end_time - start_time:.4f} seconds.")
+    print(f"\nParallel processing finished in {end_time - start_time:.4f} seconds.")
     
     # --- AGGREGATE RESULTS ---
     print("Aggregating results...")
@@ -270,9 +277,9 @@ def generate_stability_chart(n, num_samples=None):
     ax.legend()
     
     if use_sampling:
-        chart_filename = f"s{n}_stability_frequencies_sampled_{num_to_process}.png"
+        chart_filename = f"s{n}_stability_sampled_{num_to_process}.png"
     else:
-        chart_filename = f"s{n}_stability_frequencies.png"
+        chart_filename = f"s{n}_stability.png"
     
     plt.tight_layout()
     plt.savefig(chart_filename, dpi=150)
