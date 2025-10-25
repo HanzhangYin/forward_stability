@@ -12,7 +12,7 @@ _sage_const_0 = Integer(0)
 
 # --- Configuration ---
 # Change this value to compute for different S_n
-N = 110
+N = 90
 
 # Random sampling configuration
 # Set to None to compute ALL pairs, or set to a number to randomly sample that many pairs
@@ -42,7 +42,7 @@ def process_pair(pair):
         u, v = pair
         support_set = integer_support_from_formula(u, v)
         # If the set is empty, the stability number is 0
-        return max(support_set) if support_set else 0
+        return max(support_set) + 1 if support_set else 0
     except Exception as e:
         print(f"Error processing pair {pair}: {e}")
         return 0 # Return a default value on error
@@ -159,14 +159,12 @@ def compute_statistics(frequencies):
 
 # =============================================================================
 # MAIN SCRIPT (Modified for Multiprocessing)
+# Calculates the 'integer support' (Forward Stability Number, FS(u,v))
+# for pairs of permutations in S_n x S_n and generates a bar chart
+# of the frequencies using multiprocessing.
 # =============================================================================
 
 def generate_stability_chart(n, num_samples=None):
-    """
-    Calculates the 'integer support' (Forward Stability Number, FS(u,v))
-    for pairs of permutations in S_n x S_n and generates a bar chart
-    of the frequencies using multiprocessing.
-    """
     perms_obj = Permutations(n)
     task_list = [] # This will hold all the (u, v) pairs to process
     
@@ -258,8 +256,10 @@ def generate_stability_chart(n, num_samples=None):
     ax.set_ylabel('Number of Pairs (Frequency)', fontsize=12)
     
     expectation = stats['expectation']
+    std_dev = stats['std_dev']
+    variance = stats['variance']
     title = f'Forward Stability Number for S_{n}\n'
-    title += f'E[FS(u,v)] = {expectation:.4f}'
+    title += f'E[FS(u,v)] = {expectation:.4f}, σ = {std_dev:.4f}, σ² = {variance:.4f}'
     ax.set_title(title, fontsize=14)
     
     ax.set_xticks(range(min(x_values), max(x_values) + 1)) # Ensure all integer ticks
