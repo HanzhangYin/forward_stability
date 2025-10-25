@@ -13,11 +13,11 @@ _sage_const_0 = Integer(0)
 
 # --- Configuration ---
 # Change this value to compute for different S_n
-N = 30
+N = 100
 
 # Random sampling configuration
 # Set to None to compute ALL pairs, or set to a number to randomly sample that many pairs
-NUM_RANDOM_SAMPLES = 100000  # e.g., 100000 random pairs instead of all pairs
+NUM_RANDOM_SAMPLES = 1000000  # e.g., #NUM_RANDOM_SAMPLES random pairs instead of all pairs
 
 # Pool size for pre-generated permutations (for faster sampling)
 POOL_SIZE = 7000  # Medium pool size for balance of speed and diversity
