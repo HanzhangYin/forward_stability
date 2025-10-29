@@ -41,7 +41,8 @@ def process_pair(pair):
     """
     try:
         u, v = pair
-        support_set = integer_support_from_formula(u, v)
+        # support_set = integer_support_from_formula(u, v)
+        support_set = FS_ambient(u, v)
         # If the set is empty, the stability number is 0
         return max(support_set) + 1 if support_set else 0
     except Exception as e:
@@ -157,6 +158,18 @@ def compute_statistics(frequencies):
         'mode': mode_value, 'mode_count': mode_count, 'min': min_value,
         'max': max_value, 'total_count': total_count
     }
+
+def FS_ambient(u, v):
+    n = len(u)
+    du = u.to_lehmer_cocode(); dv = v.to_lehmer_cocode()
+    nz_u = [1 if x > 0 else 0 for x in du]
+    nz_v = [1 if x > 0 else 0 for x in dv]
+    tail_u = [0]*(n+2); tail_v = [0]*(n+2)
+    for i in range(n, 0, -1):
+        tail_u[i] = tail_u[i+1] + nz_u[i-1]
+        tail_v[i] = tail_v[i+1] + nz_v[i-1]
+    raw = max(tail_u[i] + tail_v[i] + i - 1 for i in range(1, n+1))
+    return max(n, raw)
 
 # =============================================================================
 # MAIN SCRIPT (Modified for Multiprocessing)
