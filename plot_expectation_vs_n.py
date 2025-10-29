@@ -16,8 +16,8 @@ _sage_const_0 = Integer(0)
 
 # --- Configuration ---
 N_START = 20
-N_END = 90
-N_STEP = 5  # Compute every 5th value (30, 35, 40, ..., 80)
+N_END = 100
+N_STEP = 1  # Compute every 5th value (30, 35, 40, ..., 80)
 NUM_RANDOM_SAMPLES = 100000  # Number of samples per N
 POOL_SIZE = 7000
 
