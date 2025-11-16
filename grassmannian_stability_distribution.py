@@ -13,7 +13,7 @@ _sage_const_0 = Integer(0)
 
 # --- Configuration ---
 # Change this value to compute for different Grassmannian permutations in S_n
-N = 10
+N = 50
 
 # Random sampling configuration
 # Set to None to compute ALL pairs, or set to a number to randomly sample that many pairs
