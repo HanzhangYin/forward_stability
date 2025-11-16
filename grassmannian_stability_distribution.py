@@ -6,6 +6,9 @@ import numpy as np
 import time  # For timing the parallel processing
 from multiprocessing import Pool, cpu_count  # <-- The new imports
 from tqdm import tqdm  # For progress bar
+from itertools import combinations
+import pickle
+import os
 
 # --- Define constants ---
 _sage_const_1 = Integer(1)
@@ -13,25 +16,34 @@ _sage_const_0 = Integer(0)
 
 # --- Configuration ---
 # Change this value to compute for different Grassmannian permutations in S_n
-N = 10
+N = 12
 
 # Random sampling configuration
 # Set to None to compute ALL pairs, or set to a number to randomly sample that many pairs
-NUM_RANDOM_SAMPLES = 10000  # e.g., NUM_RANDOM_SAMPLES random pairs instead of all pairs
+NUM_RANDOM_SAMPLES = 50000  # e.g., NUM_RANDOM_SAMPLES random pairs instead of all pairs
 
 # Pool size for pre-generated permutations (for faster sampling)
-POOL_SIZE = 5000  # Medium pool size for balance of speed and diversity
+POOL_SIZE = 10000  # Medium pool size for balance of speed and diversity
+
+# Cache directory for pre-computed Grassmannian permutations
+CACHE_DIR = ".grassmannian_cache"
 
 # =============================================================================
-# GRASSMANNIAN PERMUTATION GENERATION
+# GRASSMANNIAN PERMUTATION GENERATION (OPTIMIZED)
 # =============================================================================
 
-def grassmannian_perms_descents(n):
+def grassmannian_perms_direct(n):
     """
-    Generate Grassmannian permutations with at most one descent.
+    FAST direct generation of Grassmannian permutations using combinatorial structure.
 
-    Grassmannian permutations are characterized by having at most 1 descent.
-    They avoid the patterns 321, 2143, 3142.
+    A Grassmannian permutation has at most one descent. We generate them by:
+    1. Identity permutation (no descents)
+    2. For each descent position k (1 to n-1):
+       - Choose k elements for positions 1..k (in increasing order)
+       - Remaining elements go in positions k+1..n (in increasing order)
+       - Require: max(first k elements) > min(last n-k elements) for descent
+
+    This generates exactly 2^n - n permutations.
 
     Args:
         n: Size of the symmetric group
@@ -40,19 +52,99 @@ def grassmannian_perms_descents(n):
         list: List of Grassmannian permutations in S_n
     """
     P = Permutations(n)
-    return [p for p in P if len(p.descents()) <= 1]
+    result = []
 
-def random_grassmannian_perm(grass_perms):
+    # Identity permutation (no descent)
+    result.append(P(list(range(1, n+1))))
+
+    # For each descent position k
+    for k in range(1, n):
+        # Choose which k elements appear in first k positions
+        for first_subset in combinations(range(1, n+1), k):
+            first_part = list(first_subset)  # Already sorted from combinations
+            second_part = sorted(set(range(1, n+1)) - set(first_part))
+
+            # Check if this creates a descent: max(first) > min(second)
+            if first_part[-1] > second_part[0]:
+                perm_list = first_part + second_part
+                result.append(P(perm_list))
+
+    return result
+
+def load_cached_grassmannian(n):
     """
-    Select a random Grassmannian permutation from the list.
+    Load cached Grassmannian permutations from disk if available.
 
     Args:
-        grass_perms: List of Grassmannian permutations
+        n: Size of the symmetric group
 
     Returns:
-        A random Grassmannian permutation
+        list or None: Cached permutations if available, None otherwise
     """
-    return random.choice(grass_perms)
+    if not os.path.exists(CACHE_DIR):
+        os.makedirs(CACHE_DIR)
+
+    cache_file = os.path.join(CACHE_DIR, f"grass_n{n}.pkl")
+
+    if os.path.exists(cache_file):
+        try:
+            with open(cache_file, 'rb') as f:
+                return pickle.load(f)
+        except Exception as e:
+            print(f"Warning: Could not load cache: {e}")
+            return None
+    return None
+
+def save_cached_grassmannian(n, perms):
+    """
+    Save generated Grassmannian permutations to disk for future use.
+
+    Args:
+        n: Size of the symmetric group
+        perms: List of permutations to cache
+    """
+    if not os.path.exists(CACHE_DIR):
+        os.makedirs(CACHE_DIR)
+
+    cache_file = os.path.join(CACHE_DIR, f"grass_n{n}.pkl")
+
+    try:
+        with open(cache_file, 'wb') as f:
+            pickle.dump(perms, f)
+    except Exception as e:
+        print(f"Warning: Could not save cache: {e}")
+
+def get_grassmannian_perms(n, use_cache=True):
+    """
+    Get Grassmannian permutations with caching support.
+
+    Args:
+        n: Size of the symmetric group
+        use_cache: Whether to use caching (default True)
+
+    Returns:
+        list: List of Grassmannian permutations in S_n
+    """
+    # Try to load from cache first
+    if use_cache:
+        cached = load_cached_grassmannian(n)
+        if cached is not None:
+            print(f"  Loaded {len(cached)} Grassmannian permutations from cache")
+            return cached
+
+    # Generate directly (fast!)
+    print(f"  Generating Grassmannian permutations using direct combinatorial construction...")
+    start = time.time()
+    perms = grassmannian_perms_direct(n)
+    elapsed = time.time() - start
+    print(f"  Generated {len(perms)} permutations in {elapsed:.3f} seconds")
+
+    # Save to cache for future use
+    if use_cache:
+        save_cached_grassmannian(n, perms)
+        print(f"  Saved to cache for future use")
+
+    return perms
 
 # =============================================================================
 # TOP-LEVEL WORKER FUNCTION (FOR MULTIPROCESSING)
@@ -224,11 +316,16 @@ def compute_statistics(frequencies):
 # =============================================================================
 
 def generate_stability_chart(n, num_samples=None):
-    # Generate all Grassmannian permutations in S_n
-    print(f"Generating Grassmannian permutations in S_{n}...")
-    grass_perms = grassmannian_perms_descents(n)
+    # Generate all Grassmannian permutations in S_n (with caching)
+    print(f"Getting Grassmannian permutations in S_{n}...")
+    grass_perms = get_grassmannian_perms(n, use_cache=True)
     num_grass = len(grass_perms)
-    print(f"Found {num_grass} Grassmannian permutations (expected: {2**n - n})")
+    expected = 2**n - n
+    print(f"Total: {num_grass} Grassmannian permutations (expected: {expected})")
+
+    # Verify count
+    if num_grass != expected:
+        print(f"WARNING: Count mismatch! Got {num_grass}, expected {expected}")
 
     task_list = [] # This will hold all the (u, v) pairs to process
 
