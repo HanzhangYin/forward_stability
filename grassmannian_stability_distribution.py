@@ -53,9 +53,22 @@ def grassmannian_perms_direct(n):
     """
     P = Permutations(n)
     result = []
+    expected_count = 2**n - n
 
     # Identity permutation (no descent)
     result.append(P(list(range(1, n+1))))
+
+    # Setup progress bar with better visibility
+    pbar = tqdm(
+        total=expected_count,
+        desc="  Generating Grassmannian perms",
+        unit=" perm",
+        unit_scale=False,
+        bar_format='{desc}: {n_fmt}/{total_fmt} [{percentage:3.0f}%] {rate_fmt} {elapsed}<{remaining}',
+        mininterval=0.1,  # Update display at least every 0.1 seconds
+        miniters=1  # Update on every iteration for small n
+    )
+    pbar.update(1)  # Count the identity permutation
 
     # For each descent position k
     for k in range(1, n):
@@ -68,7 +81,10 @@ def grassmannian_perms_direct(n):
             if first_part[-1] > second_part[0]:
                 perm_list = first_part + second_part
                 result.append(P(perm_list))
+                pbar.update(1)
 
+    pbar.close()
+    print()  # Add newline after progress bar for cleaner output
     return result
 
 def load_cached_grassmannian(n):
@@ -125,24 +141,31 @@ def get_grassmannian_perms(n, use_cache=True):
     Returns:
         list: List of Grassmannian permutations in S_n
     """
+    expected = 2**n - n
+
     # Try to load from cache first
     if use_cache:
+        print(f"  Checking cache for n={n}...")
         cached = load_cached_grassmannian(n)
         if cached is not None:
-            print(f"  Loaded {len(cached)} Grassmannian permutations from cache")
+            print(f"  ✓ Loaded {len(cached)} Grassmannian permutations from cache (instant!)")
+            print(f"     Note: No progress bar shown when loading from cache")
             return cached
+        else:
+            print(f"  Cache miss - will generate from scratch")
 
     # Generate directly (fast!)
-    print(f"  Generating Grassmannian permutations using direct combinatorial construction...")
+    print(f"  Generating {expected:,} Grassmannian permutations using direct construction...")
+    print(f"     Progress bar will appear below:")
     start = time.time()
     perms = grassmannian_perms_direct(n)
     elapsed = time.time() - start
-    print(f"  Generated {len(perms)} permutations in {elapsed:.3f} seconds")
+    print(f"  ✓ Generated {len(perms):,} permutations in {elapsed:.3f} seconds ({len(perms)/elapsed:.1f} perms/sec)")
 
     # Save to cache for future use
     if use_cache:
         save_cached_grassmannian(n, perms)
-        print(f"  Saved to cache for future use")
+        print(f"  ✓ Saved to cache for future use")
 
     return perms
 
